@@ -40,6 +40,20 @@ app.get('/item/*', function(req, res) {
   res.json({success: 'get call succeed!', url: req.url});
 });
 
+//새 경로를 만들어 데이터 반환. 리스트 객체를 반환하는 /coins
+//해당 경로로 함수가 호출되면 coins를 키로 하고 코인의 정보를 갖고 있는 배열을 값으로 가진 객체를 반환.
+app.get('/coins', function(req, res) {
+  const coins = [
+    {name: 'Bitcoin', symbol:'BTC', price_usd:'1000000'},
+    {name: 'Ethereum', symbol:'ETH', price_usd:'400000'},
+    {name: 'Klayton', symbol:'Klay', price_usd:'1300'},
+  ]
+  res.json({
+    coins
+  })
+})
+
+
 /****************************
 * Example post method *
 ****************************/
