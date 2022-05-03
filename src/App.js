@@ -8,6 +8,7 @@ import {
   deleteNote as DeleteNote,
   updateNote as UpdateNote
 }from './graphql/mutations';
+import {onCreateNote} from './graphql/subscriptions'
 import "@aws-amplify/ui-react/styles.css";
 
 //AppSync 엔드포인트와 통신하기 위해 사용할 GraphQL 클라이언트. fetch, axios와 유사.
@@ -166,8 +167,25 @@ const App = () => {
   
     }
 
+  /* 실시간 데이터 서브스크립션을 위해 수정 */
   useEffect(()=>{
     FetchNotes();
+
+    //새 노트가 추가되면 이벤트가 트리거 -> 새 노트 데이터를 매개변수로 전달, next 함수 호출.
+    const subscription = API.graphql({
+      query: onCreateNote
+    }).subscribe({
+      next: noteData => {
+        const note = noteData.value.data.onCreateNote
+        //노트 데이터를 사용해 클라이언트가 노트를 생성한 애플리케이션인지 확인.
+        //만약 노트를 생성한 클라이언트면 어떤 작업도 하지 X.
+        //노트를 생성한 클라이언트가 아니면 새 노트 데이터를 ADD_NOTE 타입으로 전달.
+
+        if(CLIENT_ID === note.clientId) return
+        dispatch({type:'ADD_NOTE', note})
+      }
+    })
+    return () => subscription.unsubscribe();
   },[])
 
  
