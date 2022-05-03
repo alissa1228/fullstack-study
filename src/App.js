@@ -1,55 +1,96 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useReducer } from "react";
 import "./App.css";
-import { API } from "aws-amplify";
+import {List} from 'antd';
+import "antd/dist/antd.min.css";
+import {listNotes} from './graphql/queries';
 import "@aws-amplify/ui-react/styles.css";
 
-const App = () => {
-  const [coins, updateCoins] = useState([]);
-  
-  //limit 및 start에 대한 사용자 입력을 저장할 상태 추가.
-  const [input, updateInput] = useState({limit: 5, start:0});
+//AppSync 엔드포인트와 통신하기 위해 사용할 GraphQL 클라이언트. fetch, axios와 유사.
+import { API } from "aws-amplify";
 
-  //사용자가 입력값을 수정할 수 있는 함수 
-  const updateInputValues = (type, value) => {
-    updateInput({...input, [type]:value});
+
+  /*
+  - 애플리케이션 초기 상태 저장 변수. 여러 상태 저장, 사용을 위해 useReducer 사용.
+  - useReducer는 함수타입의 (state, action) => newState와 initialState를 인자로 받음. 
+  - useReducer Hook 호출 -> 애플리케이션의 상태  / 애플리케이션 상태를 업데이트할 수 있는 dispatch 함수
+  */
+
+  const initialState = {
+    note : [], // 노트 리스트
+    loading: true, 
+    error : false,
+    form : {name: '', description : ''} //노트 속성들
   }
 
+  //reducer 함수
+  const reducer = (state, action) => {
+    switch(action.type) {
+      case 'SET_NOTES' :
+        return {...state, notes: action.notes , loading: false}
+      case 'ERROR':
+        return {...state, loading: false, error: true}
+      default:
+        return state
+    }
+  }
 
-  //API 호출을 위한 함수 정의 (limit 및 start 이용할 수 있게 함수 수정)
+const App = () => {
 
-  const fetchCoins = async () => {
-    const {limit, start} = input;
-    const data = await API.get("apife7d2e47", `/coins?limit=${limit}&start=${start}`);
-    updateCoins(data.coins);
-  };
 
-  //컴포넌트가 마운트 될 떄 함수 호출
-  useEffect(() => {
-    fetchCoins();
-  }, []);
+  //useReducer 사용
+  const [state, dispatch] = useReducer(reducer, initialState);
+  
+  //fetch note 리스트
+  const FetchNotes = async() => {
+    try {
+      const notesData = await API.graphql({
+        query: listNotes
+      })
+      dispatch({type: 'SET_NOTES', notes:notesData.data.listNotes.items})
+    }
+    catch(err) {
+      console.log('error:',err);
+      dispatch({type: 'ERROR'})
+    }
+  }
+  
+  const renderItem = (item) => {
+    return(
+      <List.Item style={styles.item}>
+        <List.Item.Meta
+        title={item.name}
+        description={item.description}
+        />
+      </List.Item>
+    )
+  
+    }
+
+  useEffect(()=>{
+    FetchNotes();
+  },[])
+
+ 
 
   return (
-    <div>
-      <h1>Hello World!</h1>
-      <input 
-      onChange={e => updateInputValues('limit', e.target.value)}
-      placeholder='limit'
-      />
-            <input 
-      onChange={e => updateInputValues('start', e.target.value)}
-      placeholder='start'
-      />
-      <button onClick={fetchCoins}>클릭!</button>
-      {coins.map((coin, index) => (
-        <div key={index}>
-          <h2>
-            {coin.name}- {coin.symbol}
-          </h2>
-          <h5>${coin.price_usd}</h5>
-        </div>
-      ))}
+    <div style={styles.container}>
+     <List
+     loading={state.loading}
+     dataSource={state.notes}
+     renderItem={renderItem}
+     />
+
     </div>
   );
 };
 
+
+
 export default App;
+
+const styles =  {
+  container :  {padding : 20},
+  input : {marginBottom : 10},
+  item: {textAlign: 'left'},
+  p: {color : '#1890ff'}
+}
