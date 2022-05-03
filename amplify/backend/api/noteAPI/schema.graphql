@@ -1,0 +1,21 @@
+# This "input" configures a global authorization rule to enable public access to
+# all models in this schema. Learn more about authorization rules here: https://docs.amplify.aws/cli/graphql/authorization-rules
+input AMPLIFY { globalAuthRule: AuthRule = { allow: public } } # FOR TESTING ONLY!
+
+# 5개의 필드. !로 지정한 항목은 null이 불가능한 필수항목. 
+# @model 디렉티브는 GraphQL SDL이 아닌 AWS Amplify GraphQL Transform 라이브러리.
+# GraphQL Transform 라이브러리를 사용하면 @model, @connection, @auth 등과 같은 디렉티브를 GraphQL 스키마에 추가할 수 있음.
+
+type note @model {
+  id:ID! 
+  clientId: ID
+  name:String!
+  description:String
+  completed:Boolean
+}
+
+# type Todo @model {
+#   id: ID!
+#   name: String!
+#   description: String
+# }

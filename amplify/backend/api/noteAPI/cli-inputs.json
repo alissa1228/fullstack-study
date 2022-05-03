@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "serviceConfiguration": {
+    "apiName": "noteAPI",
+    "serviceName": "AppSync",
+    "gqlSchemaPath": "/Users/mac1228/project/amplify-app/amplify/backend/api/noteAPI/schema.graphql",
+    "defaultAuthType": {
+      "mode": "API_KEY",
+      "expirationTime": 7
+    }
+  }
+}
