@@ -3,7 +3,11 @@ import "./App.css";
 import {List, Input, Button} from 'antd';
 import "antd/dist/antd.min.css";
 import {listNotes} from './graphql/queries';
-import {createNote as CreateNote} from './graphql/mutations';
+import {
+  createNote as CreateNote, 
+  deleteNote as DeleteNote,
+  updateNote as UpdateNote
+}from './graphql/mutations';
 import "@aws-amplify/ui-react/styles.css";
 
 //AppSync 엔드포인트와 통신하기 위해 사용할 GraphQL 클라이언트. fetch, axios와 유사.
@@ -32,6 +36,7 @@ const CLIENT_ID = uuid();
   3. 사용자가 입력할 때 form 상태 변경
   */
   const reducer = (state, action) => {
+   // console.log(state, action)
     switch(action.type) {
       case 'SET_NOTES' :
         return {...state, notes: action.notes , loading: false}
@@ -74,12 +79,53 @@ const App = () => {
 
     try {
       await API.graphql({
-        query: createNote,
+        query: CreateNote,
         variables: {input: note}
       })
     }
     catch(err) {
       console.log('error', err);
+    }
+
+  }
+
+  const deleteNote = async({id}) => {
+    //노트의 인덱스를 찾아 삭제된 노트를 제외한 노트 리스트 만듦.
+    const index = state.notes.findIndex(item => item.id === id);
+    const notes = [
+      ...state.notes.slice(0, index),
+      ...state.notes.slice(index +1)
+    ]
+    //새 노트를 전달해 로컬 상태 업데이트
+    dispatch({type: 'SET_NOTES', notes})
+    try {
+      await API.graphql({
+        query: DeleteNote,
+        variables: {input: {id}}
+      })
+    }
+    catch(err) {
+      console.log('error:', err);
+    }
+  }
+
+  const updateNote = async(note) => {
+    //선택된 노트의 인덱트 찾기 -> 노트 리스트의 복사본 만듦
+    const index = state.notes.findIndex(item => item.id === note.id);
+    const notes = [...state.notes];
+
+    //노트 리스트 복사본에서 선택한 노트의 completed 값을 현재 값의 반대값으로 수정
+    //해당 수정 내용이 반영된 노트 리스트를 로컬에 반영 -> API 호출 후 반영.
+    notes[index].completed = !note.completed;
+    dispatch({type:'SET_NOTES', notes});
+    try{
+      await API.graphql({
+        query:UpdateNote,
+        variables: {input: {id:note.id, completed: notes[index].completed}}
+      })
+    }
+    catch(err) {
+      console.log('error:', err);
     }
 
   }
@@ -104,7 +150,13 @@ const App = () => {
   
   const renderItem = (item) => {
     return(
-      <List.Item style={styles.item}>
+      <List.Item 
+      style={styles.item}
+      actions={[
+      <p style={styles.p} onClick={()=> deleteNote(item)}>Delete</p>,
+      <p style={styles.p} onClick={()=> updateNote(item)}>{item.completed ? 'completed': 'mark completed'}</p>
+    ]}
+      >
         <List.Item.Meta
         title={item.name}
         description={item.description}
@@ -158,5 +210,5 @@ const styles =  {
   container :  {padding : 20},
   input : {marginBottom : 10},
   item: {textAlign: 'left'},
-  p: {color : '#1890ff'}
+  p: {color : '#1890ff', cursor:'pointer'}
 }
