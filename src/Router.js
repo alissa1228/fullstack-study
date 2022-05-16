@@ -34,9 +34,9 @@ const Router = () => {
         <HashRouter>
             <Nav current={current}>
                 <Routes>
-                    <Router path='/' element={<Public/>}/>
-                    <Router path='/profile' element={<Profile/>}/>
-                    <Router path='/protected' element={<Protected/>}/>
+                    <Route path='/' element={<Public/>}/>
+                    <Route path='/profile' element={<Profile/>}/>
+                    <Route path='/protected' element={<Protected/>}/>
                 </Routes>
             </Nav>
         </HashRouter>
